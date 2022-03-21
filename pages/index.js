@@ -1,29 +1,28 @@
-import { EmptyState, Page } from "@shopify/polaris";
-import {ResourcePicker, Card} from '@shopify/app-bridge-react'
+import { ResourcePicker } from "@shopify/app-bridge-react";
 import { useEffect, useState } from "react";
-import ProductList from "../components/ProductList";
 import * as PropTypes from "prop-types";
-
-function ProductEmptyState(props) {
-  return <EmptyState
-    heading="Select products to work ahead"
-    action={{
-      content: "Add Products",
-      onAction: props.onAction
-    }}
-    secondaryAction={{ content: "Learn more", url: "https://help.shopify.com" }}
-    image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
-  >
-    <p>Select the products you want to display.</p>
-  </EmptyState>;
-}
+import { ProductListPage } from "../components/productListPage";
+import { ProductEmptyState } from "../components/productEmptyState";
+import store from 'store-js'
 
 ProductEmptyState.propTypes = { onAction: PropTypes.func };
-export default function Index() {
+
+ProductListPage.propTypes = {
+  products: PropTypes.arrayOf(PropTypes.any)
+};
+
+export default function Index({host}) {
   const [isOpen, setIsOpen] = useState(false);
   const [products, setProducts] = useState([]);
 
   const [productIds, setProductIds] = useState([]);
+
+  const STORAGE_HOST = `${host}_product_selection`
+
+  useEffect(()=>{
+    let products_selection = store.get(STORAGE_HOST);
+    products_selection && setProducts(products_selection)
+  },[])
 
   useEffect(()=> {
 
@@ -43,8 +42,9 @@ export default function Index() {
 
   function handleProductSelection(payload) {
     setIsOpen(false)
-    console.log(payload);
-    setProducts(payload.selection)
+    let selection = payload.selection;
+    store.set(STORAGE_HOST, selection)
+    setProducts(selection)
   }
   return (
     <>
@@ -59,18 +59,7 @@ export default function Index() {
         products.length === 0 ?
           <ProductEmptyState onAction={() => setIsOpen(true)} />
           :
-          <Page
-            title="Product Selection"
-            primaryAction={{
-              content: "Select Product",
-              onAction() {
-                setIsOpen(true)
-                console.log("I have been clicked!!!");
-              }
-            }}
-          >
-            <ProductList products={products}/>
-          </Page>
+          <ProductListPage setIsOpen={setIsOpen} products={products} />
       }
     </>
 
